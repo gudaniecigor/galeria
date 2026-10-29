@@ -63,9 +63,14 @@ export function photoGrid(files, hrefFor) {
   async function load(item) {
     item.loading = true;
     try {
-      item.img.src = await images.thumbUrl(item.file, () => item.visible && item.link.isConnected);
+      const wanted = () => item.visible && item.link.isConnected;
+      item.img.src = await images.thumbWithPreview(item.file, wanted, (preview) => {
+        item.img.src = preview;
+        item.link.classList.add('preview');
+      });
       await item.img.decode().catch(() => {});
       item.done = true;
+      item.link.classList.remove('preview');
       item.link.classList.add('loaded');
       // Metadane z Dysku czasem nie uwzględniają obrotu — poprawiamy proporcje po wczytaniu.
       const actual = item.img.naturalWidth / item.img.naturalHeight;

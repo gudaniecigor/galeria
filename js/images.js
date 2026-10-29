@@ -1,5 +1,6 @@
 import { CONFIG } from './config.js';
 import * as drive from './drive.js';
+import { exifThumbnail } from './exif.js';
 import { createQueue } from './util.js';
 
 // Rozmiary: miniatura do siatki i okładek, duży podgląd do oglądania na pełnym ekranie.
@@ -235,6 +236,63 @@ async function makeThumb(file, wanted) {
 }
 
 export const peekThumb = (file) => thumbs.get(file.id) ?? null;
+
+// --- rozmyty podgląd od razu: miniaturka EXIF z pierwszych 64 KB pliku ---
+// Jeśli trzy pierwsze pliki jej nie mają (np. eksport bez miniaturki), przestajemy próbować.
+const PREVIEWS_KEY = 'galeria.exifPreviews';
+const previewQueue = createQueue(6);
+let previewHits = 0;
+let previewMisses = 0;
+let previewsOn = readPreviewSetting();
+
+function readPreviewSetting() {
+  try {
+    return localStorage.getItem(PREVIEWS_KEY) !== 'off';
+  } catch {
+    return true;
+  }
+}
+
+function quickPreview(file, wanted) {
+  if (!previewsOn || directLinks || file.mimeType !== 'image/jpeg') return Promise.resolve(null);
+  return previewQueue(async () => {
+    if (!previewsOn) return null; // wyłączone, gdy zadanie czekało w kolejce
+    const thumb = exifThumbnail(await drive.downloadRange(file.id, 0, 65535));
+    if (thumb) {
+      previewHits++;
+      return URL.createObjectURL(new Blob([thumb], { type: 'image/jpeg' }));
+    }
+    if (++previewMisses >= 3 && !previewHits) {
+      previewsOn = false;
+      try {
+        localStorage.setItem(PREVIEWS_KEY, 'off');
+      } catch {
+        // ignoruj
+      }
+    }
+    return null;
+  }, wanted).catch(() => null);
+}
+
+// Miniatura; jeśli jej przygotowanie potrwa, wcześniej `onPreview(url)` dostaje rozmyty podgląd.
+// Adres podglądu zwalniamy sami chwilę po wczytaniu właściwej miniatury.
+export function thumbWithPreview(file, wanted, onPreview) {
+  let done = false;
+  let preview = null;
+  const timer = setTimeout(() => {
+    if (thumbs.has(file.id)) return;
+    quickPreview(file, wanted).then((url) => {
+      if (!url) return;
+      if (done) URL.revokeObjectURL(url);
+      else onPreview((preview = url));
+    });
+  }, 120);
+  return thumbUrl(file, wanted).finally(() => {
+    done = true;
+    clearTimeout(timer);
+    if (preview) setTimeout(() => URL.revokeObjectURL(preview), 2000);
+  });
+}
 
 export function thumbUrl(file, wanted) {
   const hit = thumbs.get(file.id);

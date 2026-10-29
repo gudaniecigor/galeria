@@ -298,8 +298,12 @@ export function createFolderView(folderId, { isRoot, folderHref, photoHref, onSl
         tile.el.classList.add('no-cover');
         return;
       }
-      tile.img.src = await images.thumbUrl(folder.cover, () => tile.el.isConnected);
+      tile.img.src = await images.thumbWithPreview(folder.cover, () => tile.el.isConnected, (preview) => {
+        tile.img.src = preview;
+        tile.el.classList.add('preview');
+      });
       await tile.img.decode().catch(() => {});
+      tile.el.classList.remove('preview');
       tile.el.classList.add('loaded');
     } catch (err) {
       if (err instanceof CancelledError) tile.started = false;

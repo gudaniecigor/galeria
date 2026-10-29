@@ -1000,6 +1000,19 @@ code {
   opacity: 1;
 }
 
+/* Rozmyty podgląd z miniaturki zapisanej w pliku — zanim dojdzie właściwa miniatura */
+.ph.preview img,
+.tile.preview .tile-media img {
+  opacity: 1;
+  filter: blur(10px) saturate(1.1);
+  transform: scale(1.08);
+}
+
+.ph img,
+.tile-media img {
+  transition: opacity 0.45s ease, transform 0.6s var(--ease), filter 0.5s ease;
+}
+
 .ph:hover img {
   transform: scale(1.035);
 }

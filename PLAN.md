@@ -27,7 +27,7 @@
 
 ### Etap 5 — dodatki
 - [x] 15. ~~Konwerter HEIC~~ — niepotrzebny (zdjęcia z Nikona w JPG)
-- [ ] 16. Rozmyty podgląd od razu z miniaturki EXIF (eksperyment)
+- [x] 16. Rozmyty podgląd od razu z miniaturki EXIF (eksperyment)
 
 ### Etap 6 — aplikacja
 - [ ] 17. Instalacja jako aplikacja + zapamiętanie strony w urządzeniu

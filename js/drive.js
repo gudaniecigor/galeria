@@ -48,7 +48,7 @@ async function errorReason(response) {
   }
 }
 
-async function call(path, params = {}, { raw = false } = {}) {
+async function call(path, params = {}, { raw = false, headers = {} } = {}) {
   const url = new URL(API + path);
   for (const [key, value] of Object.entries(params)) {
     if (value != null) url.searchParams.set(key, value);
@@ -65,7 +65,7 @@ async function call(path, params = {}, { raw = false } = {}) {
 
     let response;
     try {
-      response = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
+      response = await fetch(url, { headers: { ...headers, Authorization: `Bearer ${token}` } });
     } catch {
       if (attempt >= 2) throw new DriveError(0, 'Brak połączenia z internetem.');
       await sleep(800 * (attempt + 1));
@@ -126,4 +126,11 @@ export async function download(id) {
   assertId(id);
   const response = await call(`/files/${id}`, { alt: 'media', supportsAllDrives: true }, { raw: true });
   return response.blob();
+}
+
+// Pobiera tylko fragment pliku (np. początek JPG z miniaturką zapisaną przez aparat).
+export async function downloadRange(id, start, end) {
+  assertId(id);
+  const response = await call(`/files/${id}`, { alt: 'media', supportsAllDrives: true }, { raw: true, headers: { Range: `bytes=${start}-${end}` } });
+  return new Uint8Array(await response.arrayBuffer());
 }
