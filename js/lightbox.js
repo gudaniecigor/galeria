@@ -3,14 +3,17 @@ import { formatTaken } from './dates.js';
 import { h, icon, toast } from './ui.js';
 
 const SLIDE_MS = 4500;
-const ZOOM = 2.5;
+const TAP_ZOOM = 2.5;
+const MAX_ZOOM = 6;
 
 function iconButton(name, label, onClick, extraClass = '') {
   return h('button', { class: `icon-btn ${extraClass}`, type: 'button', title: label, 'aria-label': label, onclick: onClick }, icon(name));
 }
 
-// Pełnoekranowy podgląd: strzałki / przesuwanie palcem, dwuklik = przybliżenie,
-// przeciągnięcie w dół = zamknięcie, pokaz slajdów, pobieranie oryginału.
+const wideScreen = () => matchMedia('(hover: hover) and (min-width: 900px)').matches;
+
+// Pełnoekranowy podgląd: strzałki / przesuwanie palcem, przybliżanie (dwa palce, kółko myszy,
+// dwuklik), przeciągnięcie w dół = zamknięcie, pokaz slajdów, pasek miniatur, pobieranie oryginału.
 class Lightbox {
   el = null;
   items = [];
@@ -24,8 +27,10 @@ class Lightbox {
   timer = 0;
   lastTap = 0;
   tapTimer = 0;
+  stripItems = null;
 
   build() {
+    this.ambient = h('img', { class: 'lb-ambient', alt: '', 'aria-hidden': 'true' });
     this.low = h('img', { class: 'lb-img lb-low', alt: '', draggable: 'false' });
     this.full = h('img', { class: 'lb-img lb-full', alt: '', draggable: 'false' });
     this.frame = h('div', { class: 'lb-frame' }, this.low, this.full);
@@ -40,13 +45,15 @@ class Lightbox {
     this.prevBtn = iconButton('prev', 'Poprzednie zdjęcie', () => this.go(-1), 'lb-nav lb-prev');
     this.nextBtn = iconButton('next', 'Następne zdjęcie', () => this.go(1), 'lb-nav lb-next');
     this.caption = h('div', { class: 'lb-caption' });
+    this.strip = h('div', { class: 'lb-strip', 'aria-label': 'Miniatury' });
 
     this.el = h('div', { class: 'lb', role: 'dialog', 'aria-modal': 'true', 'aria-label': 'Podgląd zdjęcia', hidden: true },
+      this.ambient,
       this.stage,
       h('div', { class: 'lb-top' }, this.counter, h('div', { class: 'lb-actions' }, this.playBtn, this.downloadBtn, this.driveLink, this.closeBtn)),
       this.prevBtn,
       this.nextBtn,
-      h('div', { class: 'lb-bottom' }, this.caption));
+      h('div', { class: 'lb-bottom' }, this.caption, this.strip));
     document.body.append(this.el);
 
     this.full.addEventListener('load', () => {
@@ -56,8 +63,10 @@ class Lightbox {
     this.full.addEventListener('error', () => {
       if (this.full.getAttribute('src')) this.fail(true);
     });
+    this.ambient.addEventListener('load', () => this.ambient.classList.add('ready'));
     this.onKey = this.onKey.bind(this);
     this.bindPointer();
+    this.stage.addEventListener('wheel', (e) => this.onWheel(e), { passive: false });
   }
 
   isOpen() {
@@ -66,7 +75,10 @@ class Lightbox {
 
   open(items, index, handlers = {}) {
     if (!this.el) this.build();
-    this.items = items;
+    if (items !== this.items) {
+      this.items = items;
+      this.buildStrip();
+    }
     this.handlers = handlers;
     if (!this.isOpen()) {
       this.returnFocus = document.activeElement;
@@ -90,6 +102,8 @@ class Lightbox {
     document.removeEventListener('keydown', this.onKey);
     this.full.removeAttribute('src');
     this.low.removeAttribute('src');
+    this.ambient.removeAttribute('src');
+    this.ambient.classList.remove('ready');
     this.index = -1;
     this.seq++;
     this.returnFocus?.focus?.({ preventScroll: true });
@@ -113,9 +127,8 @@ class Lightbox {
     this.spinner.hidden = false;
     this.full.removeAttribute('src');
     this.full.alt = file.name;
-    const low = images.peekThumb(file);
-    if (low) this.low.src = low;
-    else this.low.removeAttribute('src');
+    this.low.removeAttribute('src');
+    this.showThumb(file, seq);
 
     this.counter.textContent = `${index + 1} / ${this.items.length}`;
     const when = formatTaken(file);
@@ -123,6 +136,7 @@ class Lightbox {
     this.driveLink.href = file.webViewLink || `https://drive.google.com/file/d/${encodeURIComponent(file.id)}/view`;
     this.prevBtn.disabled = index === 0;
     this.nextBtn.disabled = index === this.items.length - 1;
+    this.markStrip(index);
     this.enter(direction);
 
     this.isOriginal = false;
@@ -140,6 +154,21 @@ class Lightbox {
     for (const neighbour of [index + 1, index + 2, index - 1]) {
       if (this.items[neighbour]) images.photoUrl(this.items[neighbour]).catch(() => {});
     }
+  }
+
+  // Miniatura służy jako szybki podgląd (zanim dojdzie duże zdjęcie) i jako rozmyte tło.
+  showThumb(file, seq) {
+    const apply = (url) => {
+      if (seq !== this.seq) return;
+      if (!this.frame.classList.contains('is-full')) this.low.src = url;
+      if (this.ambient.getAttribute('src') !== url) {
+        this.ambient.classList.remove('ready');
+        this.ambient.src = url;
+      }
+    };
+    const ready = images.peekThumb(file);
+    if (ready) apply(ready);
+    else images.thumbUrl(file).then(apply, () => {});
   }
 
   // Przy przybliżaniu podmieniamy podgląd na oryginał w pełnej rozdzielczości.
@@ -172,7 +201,7 @@ class Lightbox {
     this.message.hidden = false;
     this.message.replaceChildren(
       h('p', {}, undecodable
-        ? 'Ta przeglądarka nie potrafi wyświetlić tego formatu zdjęcia (np. HEIC z iPhone’a).'
+        ? 'Ta przeglądarka nie potrafi wyświetlić tego formatu zdjęcia.'
         : 'Nie udało się wczytać zdjęcia.'),
       h('a', { class: 'btn', href: this.driveLink.href, target: '_blank', rel: 'noopener noreferrer' }, icon('external', 16), 'Otwórz w Dysku Google'));
   }
@@ -182,8 +211,13 @@ class Lightbox {
     if (fromTimer && next >= this.items.length) next = 0;
     if (next < 0 || next >= this.items.length) return this.bump(delta);
     if (!fromTimer && this.playing) this.restartTimer();
-    if (this.handlers.onChange) this.handlers.onChange(next);
-    else this.show(next);
+    this.goTo(next);
+  }
+
+  goTo(index) {
+    if (index === this.index) return;
+    if (this.handlers.onChange) this.handlers.onChange(index);
+    else this.show(index);
   }
 
   bump(delta) {
@@ -202,6 +236,50 @@ class Lightbox {
     this.frame.style.transform = `translate3d(${-delta * 30}%, 0, 0)`;
     this.frame.style.opacity = '0';
     setTimeout(() => this.go(delta), 150);
+  }
+
+  // --- pasek miniatur (tylko na większym ekranie z myszką) ---
+  buildStrip() {
+    this.stripObserver?.disconnect();
+    this.stripItems = null;
+    this.strip.replaceChildren();
+    this.el.classList.toggle('has-strip', wideScreen() && this.items.length > 1);
+    if (!this.el.classList.contains('has-strip')) return;
+
+    this.stripObserver = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (!entry.isIntersecting) continue;
+          const button = entry.target;
+          this.stripObserver.unobserve(button);
+          const img = button.firstChild;
+          images.thumbUrl(this.items[Number(button.dataset.index)], () => this.isOpen()).then(
+            (url) => {
+              img.src = url;
+              button.classList.add('loaded');
+            },
+            () => this.stripObserver?.observe(button),
+          );
+        }
+      },
+      { root: this.strip, rootMargin: '0px 400px' },
+    );
+    this.stripItems = this.items.map((file, i) => {
+      const button = h('button', { class: 'lb-thumb', type: 'button', 'aria-label': `Zdjęcie ${i + 1}`, 'data-index': i, onclick: () => this.goTo(i) },
+        h('img', { alt: '', draggable: 'false' }));
+      this.stripObserver.observe(button);
+      return button;
+    });
+    this.strip.append(...this.stripItems);
+  }
+
+  markStrip(index) {
+    if (!this.stripItems) return;
+    this.strip.querySelector('.active')?.classList.remove('active');
+    const current = this.stripItems[index];
+    current.classList.add('active');
+    const target = current.offsetLeft - (this.strip.clientWidth - current.offsetWidth) / 2;
+    this.strip.scrollTo({ left: target, behavior: this.strip.scrollLeft ? 'smooth' : 'instant' });
   }
 
   // --- pokaz slajdów ---
@@ -269,18 +347,29 @@ class Lightbox {
     return x >= box.left && x <= box.left + box.width && y >= box.top && y <= box.top + box.height;
   }
 
+  // Ustawia przybliżenie tak, żeby punkt (x, y) ekranu został w miejscu.
+  // `fixed` to punkt zdjęcia trzymany pod palcami przy gestach dwoma palcami.
+  setZoom(zoom, x, y, fixed = null) {
+    zoom = Math.min(MAX_ZOOM, Math.max(1, zoom));
+    if (this.zoom === 1) {
+      if (zoom <= 1.01) return;
+      this.base = { frame: this.frame.getBoundingClientRect(), img: this.imageBox() };
+    }
+    const { frame } = this.base;
+    const cx = frame.left + frame.width / 2;
+    const cy = frame.top + frame.height / 2;
+    const point = fixed ?? { x: (x - cx - this.pan.x) / this.zoom, y: (y - cy - this.pan.y) / this.zoom };
+    this.zoom = zoom;
+    this.pan = this.clampPan(x - cx - zoom * point.x, y - cy - zoom * point.y);
+    this.el.classList.add('is-zoomed');
+    this.applyZoom();
+    if (zoom > 1.3) this.loadOriginal();
+  }
+
   toggleZoom(x, y) {
     if (this.zoom > 1) return this.resetZoom();
     if (!this.isOnImage(x, y)) return;
-    const frame = this.frame.getBoundingClientRect();
-    this.base = { frame, img: this.imageBox() };
-    this.zoom = ZOOM;
-    this.loadOriginal();
-    const cx = frame.left + frame.width / 2;
-    const cy = frame.top + frame.height / 2;
-    this.pan = this.clampPan((cx - x) * (ZOOM - 1), (cy - y) * (ZOOM - 1));
-    this.el.classList.add('is-zoomed');
-    this.applyZoom();
+    this.setZoom(TAP_ZOOM, x, y);
   }
 
   clampPan(x, y) {
@@ -295,30 +384,83 @@ class Lightbox {
   }
 
   resetZoom() {
-    if (this.zoom === 1) return;
+    if (!this.el?.classList.contains('is-zoomed')) return;
     this.zoom = 1;
     this.pan = { x: 0, y: 0 };
     this.el.classList.remove('is-zoomed');
     this.frame.style.transform = '';
   }
 
+  onWheel(e) {
+    if (this.zoom === 1 && !this.isOnImage(e.clientX, e.clientY)) return;
+    e.preventDefault();
+    this.frame.classList.add('no-anim');
+    const zoom = this.zoom * Math.exp(-e.deltaY * (e.ctrlKey ? 0.01 : 0.0015));
+    if (zoom <= 1.02) {
+      this.frame.classList.remove('no-anim');
+      this.resetZoom();
+    } else {
+      this.setZoom(zoom, e.clientX, e.clientY);
+    }
+    clearTimeout(this.wheelTimer);
+    this.wheelTimer = setTimeout(() => this.frame.classList.remove('no-anim'), 150);
+  }
+
   // --- gesty ---
   bindPointer() {
     const stage = this.stage;
+    const pointers = new Map();
     let start = null;
     let axis = null;
     let moved = false;
+    let pinch = null;
+
+    const center = () => {
+      const [a, b] = [...pointers.values()];
+      return { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2, distance: Math.hypot(a.x - b.x, a.y - b.y) };
+    };
+
+    const beginPinch = () => {
+      if (this.zoom === 1) this.frame.style.transform = ''; // przerwane przesuwanie jednym palcem
+      const c = center();
+      const frame = this.zoom > 1 ? this.base.frame : this.frame.getBoundingClientRect();
+      const cx = frame.left + frame.width / 2;
+      const cy = frame.top + frame.height / 2;
+      pinch = {
+        distance: Math.max(1, c.distance),
+        zoom: this.zoom,
+        point: { x: (c.x - cx - this.pan.x) / this.zoom, y: (c.y - cy - this.pan.y) / this.zoom },
+      };
+      this.frame.style.opacity = '';
+      this.el.style.removeProperty('--lb-fade');
+      this.frame.classList.add('no-anim');
+    };
 
     stage.addEventListener('pointerdown', (e) => {
       if (e.pointerType === 'mouse' && e.button !== 0) return;
       if (e.target.closest('a, button')) return;
+      pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+      stage.setPointerCapture(e.pointerId);
+      if (pointers.size === 2) {
+        moved = true;
+        start = null;
+        beginPinch();
+        return;
+      }
+      if (pointers.size > 2) return;
       start = { x: e.clientX, y: e.clientY, t: performance.now(), pan: { ...this.pan } };
       axis = null;
       moved = false;
-      stage.setPointerCapture(e.pointerId);
     });
 
     stage.addEventListener('pointermove', (e) => {
+      if (!pointers.has(e.pointerId)) return;
+      pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+      if (pinch && pointers.size >= 2) {
+        const c = center();
+        this.setZoom((pinch.zoom * c.distance) / pinch.distance, c.x, c.y, pinch.point);
+        return;
+      }
       if (!start) return;
       const dx = e.clientX - start.x;
       const dy = e.clientY - start.y;
@@ -340,6 +482,17 @@ class Lightbox {
     });
 
     const finish = (e, cancelled = false) => {
+      if (!pointers.delete(e.pointerId)) return;
+      if (pinch) {
+        if (pointers.size >= 2) return;
+        pinch = null;
+        this.frame.classList.remove('no-anim');
+        if (this.zoom < 1.05) this.resetZoom();
+        // Jeden palec został na ekranie — dalej przesuwa przybliżone zdjęcie.
+        const [rest] = pointers.values();
+        start = rest ? { x: rest.x, y: rest.y, t: performance.now(), pan: { ...this.pan } } : null;
+        return;
+      }
       if (!start) return;
       const dx = e.clientX - start.x;
       const dy = e.clientY - start.y;
@@ -381,12 +534,21 @@ class Lightbox {
 
   onKey(e) {
     if (e.altKey || e.ctrlKey || e.metaKey) return;
+    const box = this.frame.getBoundingClientRect();
     switch (e.key) {
       case 'ArrowRight':
         this.go(1);
         break;
       case 'ArrowLeft':
         this.go(-1);
+        break;
+      case '+':
+      case '=':
+        this.setZoom(this.zoom * 1.5, box.left + box.width / 2, box.top + box.height / 2);
+        break;
+      case '-':
+        if (this.zoom / 1.5 <= 1.05) this.resetZoom();
+        else this.setZoom(this.zoom / 1.5, box.left + box.width / 2, box.top + box.height / 2);
         break;
       case 'Escape':
         if (this.zoom > 1) this.resetZoom();

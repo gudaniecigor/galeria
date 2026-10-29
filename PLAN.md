@@ -14,9 +14,9 @@
 - [x] 6. Wczytywanie z wyprzedzeniem + zapamiętywanie dużych podglądów
 
 ### Etap 3 — podgląd zdjęcia
-- [ ] 7. Rozmyte tło z tego samego zdjęcia
-- [ ] 8. Przybliżanie dwoma palcami i kółkiem myszy
-- [ ] 9. Pasek miniatur na komputerze, większe przyciski na telefonie
+- [x] 7. Rozmyte tło z tego samego zdjęcia
+- [x] 8. Przybliżanie dwoma palcami i kółkiem myszy
+- [x] 9. Pasek miniatur na komputerze, większe przyciski na telefonie
 
 ### Etap 4 — wygląd galerii
 - [ ] 10. Lepsza okładka (`okladka.jpg` albo poziome zdjęcie ze środka dnia)

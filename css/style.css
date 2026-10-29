@@ -820,6 +820,7 @@ code {
   position: fixed;
   inset: 0;
   z-index: 100;
+  overflow: hidden;
   opacity: 0;
   transition: opacity 0.25s ease;
   touch-action: none;
@@ -842,6 +843,27 @@ code {
     --lb-pad-y: 64px;
     --lb-pad-x: 88px;
   }
+
+  .lb.has-strip {
+    --lb-pad-bottom: 150px;
+  }
+}
+
+/* Rozmyta, przyciemniona wersja tego samego zdjęcia jako tło */
+.lb-ambient {
+  position: absolute;
+  inset: -12%;
+  width: 124%;
+  height: 124%;
+  object-fit: cover;
+  filter: blur(56px) saturate(1.35) brightness(0.42);
+  opacity: 0;
+  transition: opacity 0.7s ease;
+  pointer-events: none;
+}
+
+.lb-ambient.ready {
+  opacity: calc(0.9 * var(--lb-fade, 1));
 }
 
 .lb-stage {
@@ -855,7 +877,7 @@ code {
 
 .lb-frame {
   position: absolute;
-  inset: var(--lb-pad-y) var(--lb-pad-x);
+  inset: var(--lb-pad-y) var(--lb-pad-x) var(--lb-pad-bottom, var(--lb-pad-y));
   transition: transform 0.3s var(--ease), opacity 0.3s ease;
 }
 
@@ -968,10 +990,68 @@ code {
 
 .lb-bottom {
   bottom: 0;
+  flex-direction: column;
   justify-content: center;
+  gap: 12px;
   padding: 36px 20px calc(16px + env(safe-area-inset-bottom, 0px));
   background: linear-gradient(rgb(0 0 0 / 0), rgb(0 0 0 / 0.55));
   pointer-events: none;
+}
+
+.lb-strip {
+  display: none;
+  gap: 6px;
+  max-width: min(100%, 1100px);
+  overflow-x: auto;
+  padding: 4px;
+  pointer-events: auto;
+  scrollbar-width: none;
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent);
+  mask-image: linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent);
+}
+
+.lb-strip::-webkit-scrollbar {
+  display: none;
+}
+
+.lb.has-strip .lb-strip {
+  display: flex;
+}
+
+.lb-thumb {
+  flex: none;
+  width: 72px;
+  height: 54px;
+  padding: 0;
+  overflow: hidden;
+  border: 0;
+  border-radius: 6px;
+  background: rgb(255 255 255 / 0.06);
+  opacity: 0.45;
+  cursor: pointer;
+  transition: opacity 0.2s, transform 0.2s var(--ease), box-shadow 0.2s;
+}
+
+.lb-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.lb-thumb.loaded img {
+  opacity: 1;
+}
+
+.lb-thumb:hover {
+  opacity: 0.85;
+}
+
+.lb-thumb.active {
+  opacity: 1;
+  box-shadow: 0 0 0 2px var(--accent);
+  transform: translateY(-2px);
 }
 
 .lb-caption {
@@ -1029,9 +1109,30 @@ code {
   pointer-events: none;
 }
 
+/* Telefon i tablet: przewijanie palcem zamiast strzałek, większe przyciski */
 @media (hover: none) {
   .lb .lb-nav {
     display: none;
+  }
+
+  .lb .icon-btn {
+    width: 48px;
+    height: 48px;
+  }
+
+  .lb .icon-btn svg {
+    width: 23px;
+    height: 23px;
+  }
+
+  .lb-top {
+    padding-right: 6px;
+    padding-left: 18px;
+    background: linear-gradient(rgb(0 0 0 / 0.7), rgb(0 0 0 / 0));
+  }
+
+  .lb-count {
+    font-size: 15px;
   }
 }
 
