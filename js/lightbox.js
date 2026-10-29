@@ -1,4 +1,3 @@
-import * as drive from './drive.js';
 import * as images from './images.js';
 import { formatTaken } from './dates.js';
 import { h, icon, toast } from './ui.js';
@@ -126,17 +125,34 @@ class Lightbox {
     this.nextBtn.disabled = index === this.items.length - 1;
     this.enter(direction);
 
-    images.fullUrl(file).then(
-      (url) => {
-        if (seq === this.seq) this.full.src = url;
+    this.isOriginal = false;
+    images.photoUrl(file).then(
+      (view) => {
+        if (seq !== this.seq) return;
+        this.full.src = view.url;
+        this.isOriginal = view.original;
       },
       () => {
         if (seq === this.seq) this.fail(false);
       },
     );
-    for (const neighbour of [index + 1, index - 1]) {
-      if (this.items[neighbour]) images.fullUrl(this.items[neighbour]).catch(() => {});
+    // Następne zdjęcia wczytujemy z wyprzedzeniem, żeby przewijanie było natychmiastowe.
+    for (const neighbour of [index + 1, index + 2, index - 1]) {
+      if (this.items[neighbour]) images.photoUrl(this.items[neighbour]).catch(() => {});
     }
+  }
+
+  // Przy przybliżaniu podmieniamy podgląd na oryginał w pełnej rozdzielczości.
+  loadOriginal() {
+    if (this.isOriginal) return;
+    this.isOriginal = true;
+    const seq = this.seq;
+    images.originalUrl(this.items[this.index]).then(
+      (url) => {
+        if (seq === this.seq) this.full.src = url;
+      },
+      () => {},
+    );
   }
 
   enter(direction) {
@@ -223,7 +239,7 @@ class Lightbox {
     this.downloadBtn.disabled = true;
     toast('Pobieranie oryginału…');
     try {
-      const blob = await drive.download(file.id);
+      const blob = await images.originalBlob(file);
       const url = URL.createObjectURL(blob);
       const link = h('a', { href: url, download: file.name, hidden: true });
       document.body.append(link);
@@ -259,6 +275,7 @@ class Lightbox {
     const frame = this.frame.getBoundingClientRect();
     this.base = { frame, img: this.imageBox() };
     this.zoom = ZOOM;
+    this.loadOriginal();
     const cx = frame.left + frame.width / 2;
     const cy = frame.top + frame.height / 2;
     this.pan = this.clampPan((cx - x) * (ZOOM - 1), (cy - y) * (ZOOM - 1));

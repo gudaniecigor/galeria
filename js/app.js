@@ -57,7 +57,9 @@ function showLogin(ready = auth.init()) {
       account: auth.rememberedAccount(),
       onLogin: async (chooseAccount) => {
         await auth.signIn({ chooseAccount });
-        auth.setUser(await drive.about());
+        const user = await drive.about();
+        await images.useStorageFor(user.email);
+        auth.setUser(user);
         await enter();
       },
     }),
@@ -213,10 +215,14 @@ function reauthenticate() {
 }
 
 // Zapamiętane miniatury zostają w przeglądarce — kolejne logowanie od razu pokaże galerię.
+// „Zaloguj się innym kontem” dodatkowo zapomina konto, cofa zgodę i kasuje zapamiętane zdjęcia.
 function logout({ forget = false } = {}) {
   lightbox.close();
-  auth.signOut();
-  if (forget) auth.forgetAccount();
+  auth.signOut({ revoke: forget });
+  if (forget) {
+    auth.forgetAccount();
+    images.clearStored();
+  }
   for (const view of views.values()) view.destroy();
   views = new Map();
   currentView = null;

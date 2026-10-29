@@ -6,6 +6,9 @@ export const FOLDER = 'application/vnd.google-apps.folder';
 const FILE_FIELDS =
   'id,name,mimeType,thumbnailLink,webViewLink,createdTime,modifiedTime,md5Checksum,imageMediaMetadata(width,height,rotation,time)';
 const ID_PATTERN = /^[\w-]{10,200}$/;
+// Tylko formaty, które przeglądarka potrafi wyświetlić — np. pliki RAW (NEF) leżące obok JPG są pomijane,
+// zamiast pobierać dziesiątki MB, których i tak nie da się pokazać.
+const IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/avif', 'image/heic', 'image/heif'];
 
 export class DriveError extends Error {
   constructor(status, message) {
@@ -88,7 +91,8 @@ async function call(path, params = {}, { raw = false } = {}) {
 
 export async function listChildren(folderId) {
   assertId(folderId);
-  const q = `'${folderId}' in parents and trashed = false and (mimeType = '${FOLDER}' or mimeType contains 'image/')`;
+  const types = [FOLDER, ...IMAGE_TYPES].map((type) => `mimeType = '${type}'`).join(' or ');
+  const q = `'${folderId}' in parents and trashed = false and (${types})`;
   const folders = [];
   const images = [];
   let pageToken;

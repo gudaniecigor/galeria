@@ -145,7 +145,12 @@ export function restore() {
   return session !== null;
 }
 
-export function signOut() {
+// Zwykłe wylogowanie usuwa token z przeglądarki (i tak wygasa po godzinie), ale zostawia zgodę
+// w Google — inaczej przy każdym logowaniu trzeba by ją od nowa potwierdzać.
+// `revoke` (przy zmianie konta) cofa też zgodę po stronie Google.
+export function signOut({ revoke = false } = {}) {
+  const current = session?.token;
   session = null;
   write(SESSION_KEY, null);
+  if (revoke && current && window.google?.accounts?.oauth2) google.accounts.oauth2.revoke(current, () => {});
 }

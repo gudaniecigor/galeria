@@ -93,7 +93,7 @@ export function photoGrid(files, hrefFor) {
         if (item.visible && !item.loading && !item.done) load(item);
       }
     },
-    { rootMargin: '1000px 0px' },
+    { rootMargin: '1500px 0px' },
   );
   for (const item of items) visibility.observe(item.link);
 

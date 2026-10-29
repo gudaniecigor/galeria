@@ -10,8 +10,8 @@
 - [x] 4. Szybszy start: równoległe ładowanie skryptów, czcionki w repozytorium
 
 ### Etap 2 — szybsze ładowanie zdjęć
-- [ ] 5. Zmniejszanie zdjęć w tle (Web Worker), bez przycinania przy przewijaniu
-- [ ] 6. Wczytywanie z wyprzedzeniem + zapamiętywanie dużych podglądów
+- [x] 5. Zmniejszanie zdjęć w tle (Web Worker), bez przycinania przy przewijaniu
+- [x] 6. Wczytywanie z wyprzedzeniem + zapamiętywanie dużych podglądów
 
 ### Etap 3 — podgląd zdjęcia
 - [ ] 7. Rozmyte tło z tego samego zdjęcia

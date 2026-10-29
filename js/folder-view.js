@@ -21,7 +21,7 @@ export function createFolderView(folderId, { isRoot, folderHref, photoHref, onSl
         if (entry.isIntersecting && tile && !tile.started) loadTile(tile);
       }
     },
-    { rootMargin: '600px 0px' },
+    { rootMargin: '1200px 0px' },
   );
   disposers.push(() => tileObserver.disconnect());
 
@@ -44,6 +44,17 @@ export function createFolderView(folderId, { isRoot, folderHref, photoHref, onSl
       parts.push(h('div', { class: 'empty' }, icon('image', 28), h('p', {}, 'Ten folder jest pusty.')));
     }
     el.replaceChildren(...parts);
+    prefetchListings(folder.folders);
+  }
+
+  // W wolnej chwili pobieramy listy zdjęć wszystkich folderów (to małe zapytania),
+  // żeby wejście do dowolnego dnia było natychmiastowe.
+  function prefetchListings(list) {
+    if (!list.length) return;
+    const idle = window.requestIdleCallback ?? ((fn) => setTimeout(fn, 1500));
+    idle(() => {
+      for (const folder of list) data.getFolder(folder.id).catch(() => {});
+    });
   }
 
   function renderError(err) {
