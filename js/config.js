@@ -8,7 +8,7 @@ export const CONFIG = {
   rootFolderId: '1OsBFf3uJ0ovwUI8AmbsAO63VWRDf-zN6',
 
   // Tytuł i podtytuł strony
-  title: 'Nasze zdjęcia',
+  title: 'Galeria',
   subtitle: 'Prywatna galeria',
 
   // Kolejność folderów z datami: 'newest' (najnowsze na górze) albo 'oldest'

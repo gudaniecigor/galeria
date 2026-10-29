@@ -19,7 +19,7 @@ export default async (page, t) => {
   await page.eval(`location.hash = '#/f/IMG_00000030x'`);
   t.ok(await page.waitFor(`document.querySelector('.state-card')?.textContent.includes('nie należy do galerii')`), 'plik zamiast folderu jest blokowany');
   await page.eval(`location.hash = '#/f/abc%22)%20or%20(1'`);
-  t.ok(await page.waitFor(`document.querySelector('.hero h1')?.textContent === 'Nasze zdjęcia'`), 'nieprawidłowy adres prowadzi do galerii');
+  t.ok(await page.waitFor(`document.querySelector('.hero h1')?.textContent === 'Galeria'`), 'nieprawidłowy adres prowadzi do galerii');
 
   // Nazwa folderu z kodem HTML
   await page.eval(`window.scrollTo(0, 99999)`);

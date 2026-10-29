@@ -65,7 +65,7 @@ https://drive.google.com/drive/folders/1AbCdEfGhIjKlMnOpQrStUvWxYz
 ```js
 clientId: '1234567890-abc...xyz.apps.googleusercontent.com',
 rootFolderId: '1AbCdEfGhIjKlMnOpQrStUvWxYz',
-title: 'Nasze zdjęcia',
+title: 'Galeria',
 ```
 
 Zapisz zmiany i wgraj plik na GitHuba. Po chwili strona będzie gotowa.

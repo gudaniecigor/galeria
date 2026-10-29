@@ -3,7 +3,7 @@ import { lbState, login, openFolder } from './_helpers.mjs';
 export default async (page, t) => {
   await page.viewport(1280, 800);
   await page.goto(t.base, 800);
-  t.ok(await page.waitFor(`document.querySelector('.login-card h1')?.textContent === 'Nasze zdjęcia'`), 'ekran logowania');
+  t.ok(await page.waitFor(`document.querySelector('.login-card h1')?.textContent === 'Galeria'`), 'ekran logowania');
   await page.shot('01-login');
 
   t.ok(await login(page, t), 'po zalogowaniu widać kafelki');
