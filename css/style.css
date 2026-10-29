@@ -1363,6 +1363,38 @@ code {
   }
 }
 
+/* ---------- stały komunikat (nowa wersja) ---------- */
+.notice {
+  position: fixed;
+  bottom: calc(20px + env(safe-area-inset-bottom, 0px));
+  left: 50%;
+  z-index: 250;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: max-content;
+  max-width: calc(100% - 32px);
+  padding: 8px 8px 8px 20px;
+  border: 1px solid var(--line-strong);
+  border-radius: 999px;
+  background: rgb(30 30 35 / 0.96);
+  box-shadow: 0 16px 40px rgb(0 0 0 / 0.45);
+  transform: translateX(-50%);
+  animation: notice-in 0.4s var(--ease) both;
+}
+
+@keyframes notice-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 16px);
+  }
+}
+
+.notice .btn {
+  min-height: 38px;
+  padding: 0 16px;
+}
+
 /* ---------- komunikat ---------- */
 .toast {
   position: fixed;

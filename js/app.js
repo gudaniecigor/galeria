@@ -6,7 +6,7 @@ import * as images from './images.js';
 import { createFolderView } from './folder-view.js';
 import { lightbox } from './lightbox.js';
 import { errorPage, loadingPage, loginPage, noAccessPage, reauthDialog, setupPage } from './pages.js';
-import { h, icon } from './ui.js';
+import { h, icon, notice } from './ui.js';
 
 const ROOT = CONFIG.rootFolderId;
 const app = document.getElementById('app');
@@ -36,7 +36,42 @@ function parseRoute() {
 const isConfigured = () =>
   !/WKLEJ/.test(CONFIG.clientId + ROOT) && /\.apps\.googleusercontent\.com$/.test(CONFIG.clientId) && drive.isValidId(ROOT);
 
+// --- aplikacja: zapamiętanie strony w urządzeniu i instalacja ---
+let installPrompt = null;
+
+function setupApp() {
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('sw.js').catch(() => {});
+    navigator.serviceWorker.addEventListener('message', (event) => {
+      if (event.data?.type === 'update') {
+        notice({ text: 'Jest nowa wersja galerii.', action: 'Odśwież', onAction: () => location.reload() });
+      }
+    });
+  }
+  // Chrome / Edge / Android: własny przycisk „Zainstaluj” w górnym pasku.
+  window.addEventListener('beforeinstallprompt', (event) => {
+    event.preventDefault();
+    installPrompt = event;
+    if (shell) shell.install.hidden = false;
+  });
+  window.addEventListener('appinstalled', () => {
+    installPrompt = null;
+    if (shell) shell.install.hidden = true;
+  });
+}
+
+async function install() {
+  if (!installPrompt) return;
+  installPrompt.prompt();
+  const { outcome } = await installPrompt.userChoice;
+  if (outcome === 'accepted') {
+    installPrompt = null;
+    shell.install.hidden = true;
+  }
+}
+
 function boot() {
+  setupApp();
   if (!isConfigured()) {
     app.replaceChildren(setupPage());
     return;
@@ -95,15 +130,20 @@ function avatar(user) {
 function mountShell() {
   const user = auth.user() ?? {};
   const back = h('button', { class: 'icon-btn back', type: 'button', title: 'Wróć', 'aria-label': 'Wróć', onclick: goBack }, icon('back'));
+  const installButton = h('button', {
+    class: 'icon-btn', type: 'button', title: 'Zainstaluj jako aplikację', 'aria-label': 'Zainstaluj jako aplikację',
+    hidden: !installPrompt, onclick: install,
+  }, icon('install'));
   const bar = h('header', { class: 'topbar' },
     back,
     h('a', { class: 'brand', href: '#/' }, CONFIG.title),
     h('div', { class: 'spacer' }),
+    installButton,
     h('div', { class: 'user', title: user.email || '' }, avatar(user), h('span', { class: 'user-name' }, user.name || user.email || '')),
-    h('button', { class: 'icon-btn', type: 'button', title: 'Wyloguj', 'aria-label': 'Wyloguj', onclick: logout }, icon('logout')));
+    h('button', { class: 'icon-btn', type: 'button', title: 'Wyloguj', 'aria-label': 'Wyloguj', onclick: () => logout() }, icon('logout')));
   const main = h('div', { class: 'view' });
   app.replaceChildren(bar, main);
-  shell = { bar, back, main };
+  shell = { bar, back, main, install: installButton };
 }
 
 function viewFor(id) {

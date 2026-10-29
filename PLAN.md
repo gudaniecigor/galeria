@@ -30,5 +30,5 @@
 - [x] 16. Rozmyty podgląd od razu z miniaturki EXIF (eksperyment)
 
 ### Etap 6 — aplikacja
-- [ ] 17. Instalacja jako aplikacja + zapamiętanie strony w urządzeniu
-- [ ] 18. Końcowy test całości, aktualizacja README
+- [x] 17. Instalacja jako aplikacja + zapamiętanie strony w urządzeniu
+- [x] 18. Końcowy test całości, aktualizacja README

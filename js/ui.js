@@ -30,6 +30,7 @@ const ICONS = {
   alert: 'M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z',
   sliders: 'M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6',
   search: 'M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16zM21 21l-4.35-4.35',
+  install: 'M12 3v11M7.5 9.5 12 14l4.5-4.5M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2',
   play: 'M7 4.5v15l12-7.5z',
   pause: 'M7 4h3.5v16H7zM13.5 4H17v16h-3.5z',
 };
@@ -83,4 +84,16 @@ export function toast(text, ms = 2600) {
   toastEl.classList.add('show');
   clearTimeout(toastTimer);
   toastTimer = setTimeout(() => toastEl.classList.remove('show'), ms);
+}
+
+let noticeEl = null;
+
+// Stały komunikat z przyciskiem (np. „Jest nowa wersja galerii · Odśwież”).
+export function notice({ text, action, onAction }) {
+  noticeEl?.remove();
+  noticeEl = h('div', { class: 'notice', role: 'status' },
+    h('span', {}, text),
+    h('button', { class: 'btn btn-primary', type: 'button', onclick: onAction }, action),
+    h('button', { class: 'icon-btn', type: 'button', title: 'Zamknij', 'aria-label': 'Zamknij', onclick: () => noticeEl?.remove() }, icon('close', 18)));
+  document.body.append(noticeEl);
 }

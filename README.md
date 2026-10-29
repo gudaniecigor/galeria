@@ -2,10 +2,14 @@
 
 Prywatna galeria na GitHub Pages. Po zalogowaniu kontem Google pokazuje foldery z Twojego Dysku jako kafelki (pogrupowane po latach), a po kliknięciu otwiera galerię zdjęć z podglądem na pełnym ekranie.
 
-- logowanie przez Google (hasło i weryfikacja dwuetapowa po stronie Google)
+- logowanie przez Google jednym kliknięciem (strona pamięta konto; hasło i weryfikacja dwuetapowa po stronie Google)
 - foldery z datami w nazwie (`2024-07-15`, `15.07.2024`, `15 lipca 2024 Wakacje`, `2024-07`…) są rozpoznawane, sortowane i grupowane po latach
-- siatka zdjęć w stylu Zdjęć Google, podgląd pełnoekranowy, strzałki / przesuwanie palcem, dwuklik = przybliżenie, przeciągnięcie w dół = zamknięcie
+- wyszukiwarka (po dacie, miesiącu, nazwie — także bez polskich znaków), pasek z latami i „Wspomnienia” — te same dni w poprzednich latach
+- okładka dnia: wybrane przez Ciebie zdjęcie `okladka.jpg` albo poziome zdjęcie ze środka dnia; rozmyta okładka w tle nagłówka
+- siatka zdjęć w stylu Zdjęć Google, podgląd pełnoekranowy z rozmytym tłem i paskiem miniatur
+- przesuwanie palcem, przybliżanie dwoma palcami / kółkiem myszy / dwuklikiem, przeciągnięcie w dół = zamknięcie
 - pokaz slajdów, pobieranie oryginału, link „Otwórz w Dysku Google”
+- instalacja jako aplikacja na komputerze i telefonie
 - działa na telefonie i komputerze, bez serwera i bez żadnych kosztów
 
 ## Jak to jest zabezpieczone
@@ -15,7 +19,7 @@ Prywatna galeria na GitHub Pages. Po zalogowaniu kontem Google pokazuje foldery 
 - **Tylko odczyt.** Strona prosi o uprawnienie `drive.readonly`, więc nie może niczego zmienić ani usunąć.
 - **W kodzie nie ma sekretów.** Client ID i ID folderu mogą być publiczne. Client ID działa wyłącznie z Twoim adresem `github.io`.
 - **Podwójna bramka.** Zalogować się mogą tylko osoby dodane jako testerzy w Google Cloud, a zobaczyć zdjęcia tylko te, którym udostępnisz folder.
-- Klucz dostępu jest ważny ok. godziny i zostaje w przeglądarce do tego czasu albo do kliknięcia „Wyloguj”. Miniatury zostają zapamiętane w przeglądarce, żeby kolejne wizyty były szybkie — usuniesz je, czyszcząc dane strony w ustawieniach przeglądarki.
+- Klucz dostępu jest ważny ok. godziny i zostaje w przeglądarce do tego czasu albo do kliknięcia „Wyloguj”. Miniatury i duże podglądy zostają zapamiętane w przeglądarce, żeby kolejne wizyty były szybkie — usuniesz je, czyszcząc dane strony w ustawieniach przeglądarki. Zalogowanie innym kontem („Zmień konto”, „Zaloguj się innym kontem”) kasuje je automatycznie.
 - Strona ma politykę bezpieczeństwa treści (CSP), która pozwala łączyć się tylko z Google.
 
 ---
@@ -79,11 +83,22 @@ Przy pierwszym logowaniu Google pokaże komunikat „Google nie zweryfikował te
 
 ## Dobrze wiedzieć
 
-- **Sesja trwa ok. godziny.** Potem pojawi się okienko „Sesja wygasła” i wystarczy kliknąć **Kontynuuj**.
-- **Pierwsze otwarcie folderu może chwilę potrwać.** Google nie udostępnia gotowych miniatur prywatnych zdjęć innym stronom, więc galeria pobiera zdjęcia i sama robi miniatury. Potem zapamiętuje je w przeglądarce, więc kolejne wizyty są szybkie. Na komórkowym internecie warto pierwszy raz otworzyć galerię na Wi-Fi.
-- **Zdjęcia HEIC z iPhone'a** wyświetlają się w Safari (iPhone, Mac). Chrome na Androidzie i Windowsie ich nie pokaże i wyświetli przycisk „Otwórz w Dysku Google”. Żeby iPhone zapisywał JPG: **Ustawienia → Aparat → Formaty → Najbardziej zgodny**.
+- **Sesja trwa ok. godziny.** Potem pojawi się okienko „Sesja wygasła” i wystarczy kliknąć **Kontynuuj**. Zamknięcie karty w tym czasie nie wylogowuje.
+- **Pierwsze otwarcie folderu może chwilę potrwać.** Google nie udostępnia gotowych miniatur prywatnych zdjęć innym stronom, więc galeria pobiera zdjęcia i sama robi z nich miniatury i duże podglądy (2048 px) — w tle, bez przycinania strony. Wszystko to zapamiętuje w przeglądarce, więc kolejne wizyty i ponowne otwieranie zdjęć są natychmiastowe. Oryginał w pełnej rozdzielczości pobiera się dopiero przy przybliżaniu albo pobieraniu. Na komórkowym internecie warto pierwszy raz otworzyć galerię na Wi-Fi.
+- **Rozmyty podgląd od razu.** Jeśli Twoje pliki JPG mają zapisaną przez aparat miniaturkę, galeria pokazuje ją (rozmytą) po pobraniu tylko 64 KB pliku. Gdy pliki jej nie mają, funkcja sama się wyłącza.
+- **Okładka dnia:** wrzuć do folderu dnia kopię wybranego zdjęcia pod nazwą `okladka.jpg` — będzie na kafelku i w nagłówku, a nie pojawi się dodatkowo w siatce zdjęć.
+- **Pliki RAW** (np. NEF) leżące obok JPG są pomijane — przeglądarka i tak nie umie ich wyświetlić.
 - **Kolejność:** w `js/config.js` ustawisz, czy najnowsze dni mają być na górze (`folderOrder`) i czy zdjęcia mają być sortowane po dacie zrobienia, czy po nazwie (`photoOrder`).
 - **Podfoldery** wewnątrz dni też działają: pokazują się jako kafelki nad zdjęciami.
+- **Skróty klawiszowe:** `/` — wyszukiwarka, `←` `→` — poprzednie / następne zdjęcie, `+` `-` — przybliżanie, `Esc` — oddal / zamknij.
+
+## Instalacja jako aplikacja
+
+- **Komputer (Chrome, Edge, Brave):** przycisk ze strzałką w górnym pasku galerii albo ikonka instalacji na końcu paska adresu.
+- **Android (Chrome):** menu ⋮ → **Zainstaluj aplikację** (albo **Dodaj do ekranu głównego**).
+- **iPhone (Safari):** **Udostępnij** → **Do ekranu początkowego**. Gdyby logowanie z ikonki na iPhonie nie chciało działać, otwórz galerię w Safari — tam działa zawsze.
+
+Zainstalowana galeria startuje z pamięci urządzenia. Gdy na GitHubie pojawi się nowa wersja, na dole pokaże się „Jest nowa wersja galerii · **Odśwież**”.
 
 ## Gdy coś nie działa
 
@@ -98,17 +113,34 @@ Przy pierwszym logowaniu Google pokaże komunikat „Google nie zweryfikował te
 ## Pliki
 
 ```
-index.html          strona (CSP, czcionki, start aplikacji)
-css/style.css       wygląd
-js/config.js        ← jedyny plik, który musisz edytować
-js/app.js           start, adresy (#/f/…), logowanie, wylogowanie
-js/auth.js          logowanie Google (Google Identity Services)
-js/drive.js         zapytania do Google Drive API
-js/data.js          foldery, sortowanie, pilnowanie granic galerii
-js/dates.js         rozpoznawanie dat w nazwach folderów
-js/images.js        miniatury, pamięć podręczna
-js/folder-view.js   kafelki i strona folderu
-js/grid.js          siatka zdjęć
-js/lightbox.js      podgląd pełnoekranowy
-js/pages.js         ekrany logowania, błędów, brak dostępu
+index.html            strona (CSP, czcionki, start aplikacji)
+manifest.webmanifest  dane do instalacji jako aplikacja
+sw.js                 zapamiętanie plików strony w urządzeniu, wykrywanie nowej wersji
+css/style.css         wygląd
+fonts/                czcionki Fraunces i Inter (licencja OFL)
+icons/                ikony aplikacji (generuje je dev/make-icons.mjs)
+js/config.js          ← jedyny plik, który musisz edytować
+js/app.js             start, adresy (#/f/…), logowanie, wylogowanie, instalacja
+js/auth.js            logowanie Google (Google Identity Services)
+js/drive.js           zapytania do Google Drive API
+js/data.js            foldery, okładki, sortowanie, pilnowanie granic galerii
+js/dates.js           rozpoznawanie dat w nazwach folderów, wyszukiwanie
+js/images.js          miniatury, duże podglądy, pamięć w przeglądarce
+js/resize-worker.js   zmniejszanie zdjęć w osobnym wątku
+js/exif.js            miniaturka zapisana przez aparat w pliku JPG
+js/folder-view.js     strona folderu: kafelki, wyszukiwarka, wspomnienia
+js/grid.js            siatka zdjęć
+js/lightbox.js        podgląd pełnoekranowy
+js/pages.js           ekrany logowania, błędów, brak dostępu
+dev/                  narzędzia testowe (nie są używane przez stronę)
 ```
+
+## Testy (dla programisty)
+
+Wymagają Node.js 22+ i przeglądarki Chrome, Edge albo Brave. Strona jest testowana na udawanym Dysku Google, bez prawdziwego konta:
+
+```bash
+node dev/test.mjs
+```
+
+Podgląd strony z udawanym Dyskiem: `node dev/serve.mjs`, a potem http://localhost:8123.
