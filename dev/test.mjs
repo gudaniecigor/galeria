@@ -1,6 +1,6 @@
 // Testy całej strony na udawanym Dysku Google, w przeglądarce bez okna.
 //   node dev/test.mjs            — wszystkie testy
-//   node dev/test.mjs mobile     — tylko pliki z „mobile” w nazwie
+//   node dev/test.mjs 'mobile|edge'  — tylko pliki pasujące do wzorca
 //   SHOTS=folder node dev/test.mjs  — dodatkowo zapisuje zrzuty ekranu
 import fs from 'node:fs';
 import path from 'node:path';
@@ -13,7 +13,7 @@ const PORT = 8124;
 const filter = process.argv[2];
 const files = fs
   .readdirSync(path.join(DEV, 'tests'))
-  .filter((f) => f.endsWith('.mjs') && !f.startsWith('_') && (!filter || f.includes(filter)))
+  .filter((f) => f.endsWith('.mjs') && !f.startsWith('_') && (!filter || new RegExp(filter).test(f)))
   .sort();
 
 const server = await startServer(PORT);

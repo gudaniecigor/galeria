@@ -19,11 +19,11 @@
 - [x] 9. Pasek miniatur na komputerze, większe przyciski na telefonie
 
 ### Etap 4 — wygląd galerii
-- [ ] 10. Lepsza okładka (`okladka.jpg` albo poziome zdjęcie ze środka dnia)
-- [ ] 11. Zdjęcie w nagłówku folderu
-- [ ] 12. Pasek z latami + wyszukiwarka
-- [ ] 13. „Tego dnia lata temu”
-- [ ] 14. Szlify: pojawianie się kafelków, nagłówki lat
+- [x] 10. Lepsza okładka (`okladka.jpg` albo poziome zdjęcie ze środka dnia)
+- [x] 11. Zdjęcie w nagłówku folderu
+- [x] 12. Pasek z latami + wyszukiwarka
+- [x] 13. „Tego dnia lata temu”
+- [x] 14. Szlify: pojawianie się kafelków, nagłówki lat
 
 ### Etap 5 — dodatki
 - [x] 15. ~~Konwerter HEIC~~ — niepotrzebny (zdjęcia z Nikona w JPG)

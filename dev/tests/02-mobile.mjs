@@ -24,14 +24,10 @@ export default async (page, t) => {
   t.ok(await page.waitFor(`document.querySelector('.lb-count').textContent.startsWith('1 /')`), 'przesunięcie w prawo = poprzednie');
   await page.waitFor(`document.querySelector('.lb-frame')?.classList.contains('is-full')`);
 
-  await page.tap(195, 420);
-  await page.sleep(80);
-  await page.tap(195, 420);
+  await page.doubleTap(195, 420);
   t.ok(await page.waitFor(`document.querySelector('.lb').classList.contains('is-zoomed')`), 'podwójne stuknięcie przybliża');
   await page.shot('m04-zoom');
-  await page.tap(195, 420);
-  await page.sleep(80);
-  await page.tap(195, 420);
+  await page.doubleTap(195, 420);
   t.ok(await page.waitFor(`!document.querySelector('.lb').classList.contains('is-zoomed')`), 'ponowne podwójne stuknięcie oddala');
   await page.sleep(400);
 

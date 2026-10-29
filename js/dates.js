@@ -57,10 +57,10 @@ const capitalize = (text) => text.charAt(0).toUpperCase() + text.slice(1);
 // Zwraca opis folderu: tytuł do kafelka, pełną datę do nagłówka, rok do grupowania.
 export function describeFolder(name = '') {
   const parsed = parse(name);
-  if (!parsed) return { dated: false, short: name, full: name, weekday: null, note: null, year: null, time: null };
+  if (!parsed) return { dated: false, short: name, full: name, weekday: null, month: null, note: null, year: null, time: null, precision: null };
 
   const { date, precision, rest } = parsed;
-  const base = { dated: true, year: date.getFullYear(), time: date.getTime(), note: rest || null, weekday: null };
+  const base = { dated: true, date, precision, year: date.getFullYear(), time: date.getTime(), note: rest || null, weekday: null, month: null };
 
   if (precision === 'day') {
     return {
@@ -68,6 +68,7 @@ export function describeFolder(name = '') {
       short: format(date, { day: 'numeric', month: 'long' }),
       full: format(date, { day: 'numeric', month: 'long', year: 'numeric' }),
       weekday: capitalize(format(date, { weekday: 'long' })),
+      month: format(date, { month: 'long' }),
     };
   }
   if (precision === 'month') {
@@ -75,9 +76,21 @@ export function describeFolder(name = '') {
       ...base,
       short: capitalize(format(date, { month: 'long' })),
       full: capitalize(format(date, { month: 'long', year: 'numeric' })),
+      month: format(date, { month: 'long' }),
     };
   }
   return { ...base, short: String(base.year), full: String(base.year) };
+}
+
+// Tekst do wyszukiwania bez polskich znaków i wielkich liter: „Łódź” → „lodz”.
+export const normalize = (text) =>
+  text.normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/ł/g, 'l').replace(/Ł/g, 'L').toLowerCase();
+
+// Folder można znaleźć po nazwie, pełnej dacie („15 lipca 2024”), miesiącu („lipiec”) i dniu tygodnia.
+export const searchText = (name, info) => normalize([name, info.full, info.month, info.weekday, info.note].filter(Boolean).join(' '));
+
+export function yearsAgoLabel(years) {
+  return years === 1 ? 'Rok temu' : `${years} ${plural(years, 'rok', 'lata', 'lat')} temu`;
 }
 
 export function formatTaken(file) {

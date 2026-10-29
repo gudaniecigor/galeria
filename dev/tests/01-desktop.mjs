@@ -8,7 +8,7 @@ export default async (page, t) => {
 
   t.ok(await login(page, t), 'po zalogowaniu widać kafelki');
   const home = await page.eval(`({
-    groups: [...document.querySelectorAll('.group-head h2')].map((n) => n.textContent),
+    groups: [...document.querySelectorAll('.group:not(.memories) .group-head h2')].map((n) => n.textContent),
     user: document.querySelector('.user-name')?.textContent,
   })`);
   t.eq(home.groups, ['2025', '2024', '2023', 'Bez daty'], 'lata od najnowszego, „Bez daty” na końcu');

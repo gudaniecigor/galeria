@@ -121,6 +121,20 @@ export async function launch({ port = 9333, shots } = {}) {
       await send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x, y }] });
       await send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
     },
+    // Podwójne stuknięcie z jawnym czasem zdarzeń — niezależne od tego, jak szybko odpowiada przeglądarka.
+    async doubleTap(x, y) {
+      const t = Date.now() / 1000;
+      for (const [type, at] of [['touchStart', 0], ['touchEnd', 0.04], ['touchStart', 0.14], ['touchEnd', 0.18]]) {
+        await send('Input.dispatchTouchEvent', { type, touchPoints: type === 'touchEnd' ? [] : [{ x, y }], timestamp: t + at });
+      }
+    },
+    async doubleClick(x, y) {
+      const t = Date.now() / 1000;
+      await send('Input.dispatchMouseEvent', { type: 'mouseMoved', x, y, timestamp: t });
+      for (const [type, at] of [['mousePressed', 0], ['mouseReleased', 0.04], ['mousePressed', 0.14], ['mouseReleased', 0.18]]) {
+        await send('Input.dispatchMouseEvent', { type, x, y, button: 'left', clickCount: 1, timestamp: t + at });
+      }
+    },
     async swipe(x1, y1, x2, y2, steps = 8) {
       await send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: x1, y: y1 }] });
       for (let i = 1; i <= steps; i++) {

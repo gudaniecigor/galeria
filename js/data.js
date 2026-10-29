@@ -78,10 +78,25 @@ function build(id, { folders: subfolders, images }) {
     Object.assign(image, takenAt(image));
     image.ratio = ratioOf(image);
   }
-  images.sort(CONFIG.photoOrder === 'name' ? byName : byTaken);
+  // Plik „okladka.jpg” wybiera okładkę dnia i nie pojawia się w siatce zdjęć.
+  const coverFile = images.find((image) => COVER_NAME.test(image.name.normalize('NFC')));
+  const photos = images.filter((image) => image !== coverFile);
+  photos.sort(CONFIG.photoOrder === 'name' ? byName : byTaken);
 
   const name = names.get(id) ?? '';
-  return { id, name, info: describeFolder(name), folders: subfolders, images };
+  return { id, name, info: describeFolder(name), folders: subfolders, images: photos, cover: coverFile ?? pickCover(photos) };
+}
+
+const COVER_NAME = /^(ok[lł]adka|cover)\.(jpe?g|png|webp|avif)$/i;
+
+// Bez pliku okładki: poziome zdjęcie najbliżej środka dnia (pierwsze zdjęcie bywa przypadkowe).
+function pickCover(photos) {
+  if (!photos.length) return null;
+  const middle = (photos.length - 1) / 2;
+  const landscape = photos.filter((photo) => photo.ratio >= 1.2);
+  const pool = landscape.length ? landscape : photos;
+  return pool.reduce((best, photo) =>
+    Math.abs(photos.indexOf(photo) - middle) < Math.abs(photos.indexOf(best) - middle) ? photo : best);
 }
 
 function compareFolders(a, b) {

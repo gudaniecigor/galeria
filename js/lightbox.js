@@ -32,7 +32,7 @@ class Lightbox {
   build() {
     this.ambient = h('img', { class: 'lb-ambient', alt: '', 'aria-hidden': 'true' });
     this.low = h('img', { class: 'lb-img lb-low', alt: '', draggable: 'false' });
-    this.full = h('img', { class: 'lb-img lb-full', alt: '', draggable: 'false' });
+    this.full = h('img', { class: 'lb-img lb-full', alt: '', draggable: 'false', decoding: 'async' });
     this.frame = h('div', { class: 'lb-frame' }, this.low, this.full);
     this.spinner = h('div', { class: 'lb-spinner', 'aria-hidden': 'true' });
     this.message = h('div', { class: 'lb-message', hidden: true });
@@ -448,7 +448,7 @@ class Lightbox {
         return;
       }
       if (pointers.size > 2) return;
-      start = { x: e.clientX, y: e.clientY, t: performance.now(), pan: { ...this.pan } };
+      start = { x: e.clientX, y: e.clientY, t: e.timeStamp, pan: { ...this.pan } };
       axis = null;
       moved = false;
     });
@@ -490,13 +490,13 @@ class Lightbox {
         if (this.zoom < 1.05) this.resetZoom();
         // Jeden palec został na ekranie — dalej przesuwa przybliżone zdjęcie.
         const [rest] = pointers.values();
-        start = rest ? { x: rest.x, y: rest.y, t: performance.now(), pan: { ...this.pan } } : null;
+        start = rest ? { x: rest.x, y: rest.y, t: e.timeStamp, pan: { ...this.pan } } : null;
         return;
       }
       if (!start) return;
       const dx = e.clientX - start.x;
       const dy = e.clientY - start.y;
-      const dt = Math.max(1, performance.now() - start.t);
+      const dt = Math.max(1, e.timeStamp - start.t);
       start = null;
       this.frame.classList.remove('no-anim');
       this.el.style.removeProperty('--lb-fade');
@@ -516,19 +516,28 @@ class Lightbox {
     stage.addEventListener('pointercancel', (e) => finish(e, true));
   }
 
+  // Czas stuknięcia bierzemy ze zdarzenia, a nie z chwili obsługi — gdy telefon jest zajęty
+  // (np. dekoduje duże zdjęcie), podwójne stuknięcie nadal zostanie rozpoznane.
   tap(e) {
-    const now = performance.now();
+    const now = e.timeStamp;
     const { clientX: x, clientY: y, pointerType } = e;
     if (now - this.lastTap < 300) {
       clearTimeout(this.tapTimer);
+      if (this.tapToggled) this.el.classList.toggle('chrome-hidden'); // pierwsze stuknięcie zdążyło już zadziałać
       this.lastTap = 0;
+      this.tapToggled = false;
       this.toggleZoom(x, y);
       return;
     }
     this.lastTap = now;
+    this.tapToggled = false;
     this.tapTimer = setTimeout(() => {
-      if (pointerType === 'mouse' && this.zoom === 1 && !this.isOnImage(x, y)) this.requestClose();
-      else this.el.classList.toggle('chrome-hidden');
+      if (pointerType === 'mouse' && this.zoom === 1 && !this.isOnImage(x, y)) {
+        this.requestClose();
+      } else {
+        this.el.classList.toggle('chrome-hidden');
+        this.tapToggled = true;
+      }
     }, 260);
   }
 

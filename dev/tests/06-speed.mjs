@@ -31,9 +31,7 @@ export default async (page, t) => {
   // Przybliżenie podmienia podgląd na oryginał
   await page.eval(`(() => { const r = document.querySelector('.lb-full').getBoundingClientRect(); window.__c = [r.x + r.width / 2, r.y + r.height / 2]; })()`);
   const [cx, cy] = await page.eval(`window.__c`);
-  await page.click(cx, cy);
-  await page.sleep(60);
-  await page.click(cx, cy);
+  await page.doubleClick(cx, cy);
   t.ok(await page.waitFor(`document.querySelector('.lb').classList.contains('is-zoomed')`), 'dwuklik przybliża');
   t.ok(await page.waitFor(`document.querySelector('.lb-full').naturalWidth > 2048`, 8000), 'przy przybliżeniu wczytuje się oryginał');
 
