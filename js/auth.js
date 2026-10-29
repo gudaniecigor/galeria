@@ -3,7 +3,8 @@ import { CONFIG } from './config.js';
 // Tylko odczyt — strona nie może niczego zmienić ani usunąć na Dysku.
 export const SCOPE = 'https://www.googleapis.com/auth/drive.readonly';
 const GIS_SRC = 'https://accounts.google.com/gsi/client';
-const STORAGE_KEY = 'galeria.session';
+const SESSION_KEY = 'galeria.session';
+const ACCOUNT_KEY = 'galeria.account';
 
 let session = null; // { token, expiresAt, user }
 let client = null;
@@ -25,6 +26,23 @@ const MESSAGES = {
   scope: 'Aby zobaczyć zdjęcia, zaznacz zgodę na wyświetlanie plików z Dysku Google.',
 };
 const message = (code) => MESSAGES[code] || 'Nie udało się zalogować. Spróbuj ponownie.';
+
+function read(key) {
+  try {
+    return JSON.parse(localStorage.getItem(key) || 'null');
+  } catch {
+    return null;
+  }
+}
+
+function write(key, value) {
+  try {
+    if (value == null) localStorage.removeItem(key);
+    else localStorage.setItem(key, JSON.stringify(value));
+  } catch {
+    // localStorage niedostępny (np. tryb prywatny) — sesja zostaje tylko w pamięci
+  }
+}
 
 function loadScript() {
   return new Promise((resolve, reject) => {
@@ -77,19 +95,27 @@ function handleToken(response) {
     token: response.access_token,
     expiresAt: Date.now() + (Number(response.expires_in) || 3600) * 1000 - 60_000,
   };
-  persist();
+  write(SESSION_KEY, session);
   settle(session);
 }
 
+// Konto zapamiętane z poprzedniego logowania — dzięki temu nie trzeba go wybierać.
+export const rememberedAccount = () => read(ACCOUNT_KEY);
+
+export function forgetAccount() {
+  write(ACCOUNT_KEY, null);
+}
+
 // Musi być wywołane od razu w obsłudze kliknięcia — inaczej przeglądarka zablokuje okno logowania.
-// `reauth` odnawia sesję tego samego konta bez ponownego wybierania konta.
-export function signIn({ reauth = false } = {}) {
+// Przy zapamiętanym koncie okno Google tylko mignie; `chooseAccount` wymusza wybór konta.
+export function signIn({ reauth = false, chooseAccount = false } = {}) {
   if (!client) return Promise.reject(new AuthError('load', 'Logowanie jeszcze się ładuje — spróbuj za chwilę.'));
   settle(new AuthError('superseded', 'Przerwano poprzednie logowanie.'));
+  const hint = session?.user?.email ?? rememberedAccount();
   if (!reauth) session = null;
   return new Promise((resolve, reject) => {
     pending = { resolve, reject };
-    client.requestAccessToken(reauth ? { prompt: '', login_hint: session?.user?.email } : {});
+    client.requestAccessToken(hint && !chooseAccount ? { prompt: '', login_hint: hint } : { prompt: 'select_account' });
   });
 }
 
@@ -100,7 +126,7 @@ export function token() {
 export function invalidate() {
   if (!session) return;
   session.expiresAt = 0;
-  persist();
+  write(SESSION_KEY, session);
 }
 
 export const user = () => session?.user ?? null;
@@ -108,33 +134,18 @@ export const user = () => session?.user ?? null;
 export function setUser(value) {
   if (!session) return;
   session.user = value;
-  persist();
+  write(SESSION_KEY, session);
+  write(ACCOUNT_KEY, value.email);
 }
 
-// Sesja przeżywa odświeżenie strony, ale znika po zamknięciu karty.
+// Sesja przeżywa zamknięcie karty i przeglądarki, ale token Google i tak wygasa po ok. godzinie.
 export function restore() {
-  try {
-    const saved = JSON.parse(sessionStorage.getItem(STORAGE_KEY) || 'null');
-    if (saved?.token && saved.user && saved.expiresAt > Date.now()) session = saved;
-  } catch {
-    session = null;
-  }
+  const saved = read(SESSION_KEY);
+  session = saved?.token && saved.user && saved.expiresAt > Date.now() ? saved : null;
   return session !== null;
 }
 
-function persist() {
-  try {
-    if (session) sessionStorage.setItem(STORAGE_KEY, JSON.stringify(session));
-    else sessionStorage.removeItem(STORAGE_KEY);
-  } catch {
-    // sessionStorage niedostępny (np. tryb prywatny) — sesja zostaje tylko w pamięci
-  }
-}
-
 export function signOut() {
-  const current = session?.token;
   session = null;
-  persist();
-  // Unieważnia token i zgodę po stronie Google.
-  if (current && window.google?.accounts?.oauth2) google.accounts.oauth2.revoke(current, () => {});
+  write(SESSION_KEY, null);
 }

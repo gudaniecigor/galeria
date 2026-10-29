@@ -4,10 +4,10 @@
 - [x] 0. Testy w repozytorium (`dev/`): udawany Dysk Google + automatyczne przeklikanie strony
 
 ### Etap 1 — wygoda i szybki start
-- [ ] 1. Logowanie jednym kliknięciem (strona pamięta konto)
-- [ ] 2. Sesja przeżywa zamknięcie karty
-- [ ] 3. Miniatury nie znikają po wylogowaniu
-- [ ] 4. Szybszy start: równoległe ładowanie skryptów, czcionki w repozytorium
+- [x] 1. Logowanie jednym kliknięciem (strona pamięta konto)
+- [x] 2. Sesja przeżywa zamknięcie karty
+- [x] 3. Miniatury nie znikają po wylogowaniu
+- [x] 4. Szybszy start: równoległe ładowanie skryptów, czcionki w repozytorium
 
 ### Etap 2 — szybsze ładowanie zdjęć
 - [ ] 5. Zmniejszanie zdjęć w tle (Web Worker), bez przycinania przy przewijaniu

@@ -25,26 +25,34 @@ function backdrop() {
   return wrap;
 }
 
-export function loginPage({ ready, onLogin }) {
+export function loginPage({ ready, account, onLogin }) {
   const error = h('p', { class: 'form-error', role: 'alert' });
   const button = h('button', { class: 'gbtn', type: 'button', disabled: true }, googleLogo(), h('span', {}, 'Zaloguj się przez Google'));
+  const switchAccount = account
+    ? h('p', { class: 'login-account' },
+        h('span', {}, account),
+        h('button', { class: 'link-btn', type: 'button', disabled: true }, 'Zmień konto'))
+    : null;
+  const buttons = [button, switchAccount?.querySelector('button')].filter(Boolean);
 
   ready.then(
-    () => (button.disabled = false),
+    () => buttons.forEach((b) => (b.disabled = false)),
     (err) => (error.textContent = err.message),
   );
 
-  button.addEventListener('click', async () => {
+  const login = async (chooseAccount) => {
     error.textContent = '';
-    button.disabled = true;
+    buttons.forEach((b) => (b.disabled = true));
     try {
-      await onLogin();
+      await onLogin(chooseAccount);
     } catch (err) {
       error.textContent = err.message || 'Nie udało się zalogować.';
     } finally {
-      button.disabled = false;
+      buttons.forEach((b) => (b.disabled = false));
     }
-  });
+  };
+  button.addEventListener('click', () => login(false));
+  switchAccount?.querySelector('button').addEventListener('click', () => login(true));
 
   return h('div', { class: 'login' },
     backdrop(),
@@ -53,6 +61,7 @@ export function loginPage({ ready, onLogin }) {
       h('h1', {}, CONFIG.title),
       h('p', { class: 'login-sub' }, CONFIG.subtitle),
       button,
+      switchAccount,
       error,
       h('p', { class: 'login-note' }, icon('lock', 14), h('span', {}, 'Dostęp tylko dla zaproszonych osób. Hasło wpisujesz bezpośrednio u Google — ta strona go nie widzi.'))));
 }

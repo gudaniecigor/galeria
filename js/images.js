@@ -180,23 +180,11 @@ export function fullUrl(file) {
   return promise;
 }
 
-export async function clearAll() {
+// Zwalnia pamięć RAM; miniatury zapisane w przeglądarce zostają na kolejną wizytę.
+export function releaseMemory() {
   for (const url of thumbs.values()) URL.revokeObjectURL(url);
   for (const promise of fulls.values()) promise.then((url) => URL.revokeObjectURL(url), () => {});
   thumbs.clear();
   fulls.clear();
   pending.clear();
-  directLinks = true;
-  try {
-    sessionStorage.removeItem(LINKS_KEY);
-  } catch {
-    // ignoruj
-  }
-  if ('caches' in window) {
-    try {
-      await caches.delete(CACHE_NAME);
-    } catch {
-      // ignoruj
-    }
-  }
 }

@@ -15,7 +15,7 @@ Prywatna galeria na GitHub Pages. Po zalogowaniu kontem Google pokazuje foldery 
 - **Tylko odczyt.** Strona prosi o uprawnienie `drive.readonly`, więc nie może niczego zmienić ani usunąć.
 - **W kodzie nie ma sekretów.** Client ID i ID folderu mogą być publiczne. Client ID działa wyłącznie z Twoim adresem `github.io`.
 - **Podwójna bramka.** Zalogować się mogą tylko osoby dodane jako testerzy w Google Cloud, a zobaczyć zdjęcia tylko te, którym udostępnisz folder.
-- Klucz dostępu znika po zamknięciu karty. „Wyloguj” unieważnia go u Google i czyści zapamiętane miniatury.
+- Klucz dostępu jest ważny ok. godziny i zostaje w przeglądarce do tego czasu albo do kliknięcia „Wyloguj”. Miniatury zostają zapamiętane w przeglądarce, żeby kolejne wizyty były szybkie — usuniesz je, czyszcząc dane strony w ustawieniach przeglądarki.
 - Strona ma politykę bezpieczeństwa treści (CSP), która pozwala łączyć się tylko z Google.
 
 ---

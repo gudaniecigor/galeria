@@ -18,6 +18,6 @@ export const CONFIG = {
   photoOrder: 'taken',
 
   // Zapamiętuj miniatury w przeglądarce, żeby kolejne wizyty były szybsze.
-  // Są usuwane po kliknięciu „Wyloguj”.
+  // Zostają też po wylogowaniu; usuwa je wyczyszczenie danych strony w przeglądarce.
   cacheThumbnails: true,
 };

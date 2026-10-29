@@ -54,8 +54,9 @@ function showLogin(ready = auth.init()) {
   app.replaceChildren(
     loginPage({
       ready,
-      onLogin: async () => {
-        await auth.signIn();
+      account: auth.rememberedAccount(),
+      onLogin: async (chooseAccount) => {
+        await auth.signIn({ chooseAccount });
         auth.setUser(await drive.about());
         await enter();
       },
@@ -65,11 +66,13 @@ function showLogin(ready = auth.init()) {
 
 async function enter() {
   app.replaceChildren(loadingPage());
+  // Prośba, by przeglądarka nie usuwała zapamiętanych miniatur przy braku miejsca.
+  navigator.storage?.persist?.().catch(() => {});
   try {
     await data.checkRoot();
   } catch (err) {
     if (err.status === 404 || err.status === 403) {
-      app.replaceChildren(noAccessPage({ email: auth.user()?.email, onLogout: logout }));
+      app.replaceChildren(noAccessPage({ email: auth.user()?.email, onLogout: () => logout({ forget: true }) }));
     } else {
       app.replaceChildren(errorPage(err, enter));
     }
@@ -209,16 +212,18 @@ function reauthenticate() {
   return reauthPromise;
 }
 
-async function logout() {
+// Zapamiętane miniatury zostają w przeglądarce — kolejne logowanie od razu pokaże galerię.
+function logout({ forget = false } = {}) {
   lightbox.close();
   auth.signOut();
+  if (forget) auth.forgetAccount();
   for (const view of views.values()) view.destroy();
   views = new Map();
   currentView = null;
   shell = null;
   current = { folder: null, photo: null };
   data.reset();
-  await images.clearAll();
+  images.releaseMemory();
   history.replaceState(null, '', location.pathname + location.search);
   showLogin();
 }
